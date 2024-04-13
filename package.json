@@ -1,0 +1,16 @@
+{
+  "name": "@jestery/fastify-app",
+  "version": "0.0.1",
+  "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Zhiyi",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^4.22.2",
+    "@fastify/cors": "^8.3.0",
+    "fast-glob": "^3.3.2"
+  }
+}

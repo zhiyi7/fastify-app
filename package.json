@@ -1,10 +1,15 @@
 {
   "name": "@jestery/fastify-app",
-  "version": "0.0.1",
+  "version": "1.0",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "homepage": "https://github.com/zhiyi7/fastify-app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhiyi7/fastify-app.git"
   },
   "author": "Zhiyi",
   "license": "ISC",

@@ -1,6 +1,6 @@
 {
-  "name": "@jestery/fastify-app",
-  "version": "1.0",
+  "name": "fastify-app",
+  "version": "1.0.0",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "index.js",
   "scripts": {

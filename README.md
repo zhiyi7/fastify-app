@@ -138,7 +138,7 @@ You can organize your API by putting them in different folders. The folder name 
 ### Install
 
 ```bash
-npm install @jestery/fastify-app js-yaml
+npm install fastify-app js-yaml
 ```
 
 > **Note**

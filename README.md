@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a simple fasitfy application initializer for JSON API server with some pre-defined features.
+This is a simple fasitfy application skeleton for JSON API server with some pre-defined features.
 
 After calling the default exported function, the fastify server will listen on the specified host and port. The returned value of the function is a fastify instance. By default, this instance will also be registered to the global scope with variable name `app`. You can access it via `global.app` or just `app`. This name can be changed by setting the `app.globalAppVariable` in the config. To prevent this behavior, set the `app.disableGlobalAppVariable` to `true`.
 

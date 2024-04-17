@@ -75,7 +75,16 @@ module.exports = (
          ************************************/
         if (!config.app.disableLogRequestBody) {
             app.addHook('preHandler', (req, res, done) => {
-                if (req.body) req.log.info(req.body);
+                let clone = null;
+                if (req.body && req.headers['content-length'] > 1000) {
+                    clone = JSON.parse(JSON.stringify(req.body));
+                    for (const key in clone) {
+                        if (clone[key] && clone[key].length > 100) {
+                            clone[key] = clone[key].slice(0, 100) + '...';
+                        }
+                    }
+                }
+                req.log.info({url: req.url, body: clone || req.body, headers: req.headers});
                 done()
             })
         }

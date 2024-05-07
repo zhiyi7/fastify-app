@@ -167,7 +167,7 @@ app:
   disableLogRequestBody: false
   disableSendRequestIdHeader: false
   disableApiErrorHandler: false
-  InternalServerErrorCode: 200
+  internalServerErrorCode: 200
   disableHealthCheckRoutes: false
   healthCheckRoutesPrefix: "/health-check"
   enableHealthCheckShowsGitRev: false
@@ -233,5 +233,5 @@ You can also create subfolders in the `app` folder to organize your API. If you 
 
 ## Start the server
 ```javascript
-require('@jestery/fastify-app')(require('js-yaml').load(require('fs').readFileSync('./config.yaml', 'utf8')))
+require('fastify-app')(require('js-yaml').load(require('fs').readFileSync('./config.yaml', 'utf8')))
 ```

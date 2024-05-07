@@ -124,7 +124,7 @@ module.exports = (
                         err.statusCode = error.statusCode
                         err.code = error.code
                     }
-                    res.status(config.app.InternalServerErrorCode || 200).send(err)
+                    res.status(config.app.internalServerErrorCode || 200).send(err)
                 }
             })
             if (!config.app.disableLogApiError) {

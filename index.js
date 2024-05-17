@@ -17,6 +17,7 @@ module.exports = (
      * @param {Object} config.app - Application configuration
      * @param {Boolean} config.app.disableCors - Whether to disable the cors plugin, default false
      * @param {Boolean} config.app.disableLogRequestBody - Whether to disable logging of request body, default false
+     * @param {Boolean} config.app.disableLogRequestHeaders - Whether to disable logging of request headers, default false
      * @param {Boolean} config.app.disableSendRequestIdHeader - Whether to disable sending Request ID in response headers, default false
      * @param {Boolean} config.app.disableApiErrorHandler - Whether to disable the ApiErrorHandler, default false
      * @param {Boolean} config.app.disableLogApiError - Whether to disable logging of ApiError, default false
@@ -71,20 +72,27 @@ module.exports = (
         }
 
         /************************************
-         * Log request body
+         * Log request body and headers
          ************************************/
-        if (!config.app.disableLogRequestBody) {
+        if (!config.app.disableLogRequestBody || !config.app.disableLogRequestHeaders) {
             app.addHook('preHandler', (req, res, done) => {
-                let clone = null;
-                if (req.body && req.headers['content-length'] > 1000) {
-                    clone = JSON.parse(JSON.stringify(req.body));
-                    for (const key in clone) {
-                        if (clone[key] && clone[key].length > 100) {
-                            clone[key] = clone[key].slice(0, 100) + '...';
+                const logContent = {url: req.url}
+                if (!config.app.disableLogRequestBody) {
+                    let clone = null;
+                    if (req.body && req.headers['content-length'] > 1000) {
+                        clone = JSON.parse(JSON.stringify(req.body));
+                        for (const key in clone) {
+                            if (clone[key] && clone[key].length > 255) {
+                                clone[key] = clone[key].slice(0, 255) + '...';
+                            }
                         }
                     }
+                    logContent.body = clone || req.body;
                 }
-                req.log.info({url: req.url, body: clone || req.body, headers: req.headers});
+                if (!config.app.disableLogRequestHeaders) {
+                    logContent.headers = req.headers;
+                }
+                req.log.info(logContent);
                 done()
             })
         }

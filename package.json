@@ -1,6 +1,6 @@
 {
   "name": "fastify-app",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
   "author": "Zhiyi",
   "license": "ISC",
   "dependencies": {
-    "fastify": "^4.26.2",
+    "fastify": "^4.27.0",
     "@fastify/cors": "^9.0.1",
     "fast-glob": "^3.3.2"
   }

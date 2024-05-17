@@ -86,9 +86,9 @@ By default, the server will add the CORS headers to the response. This behavior 
 
 By default, the server will log the request and response to console. This behavior can be disabled by setting the `fastify.disableRequestLogging` to `true`, or by setting the `fastify.logger`. All the settings under the `fastify` key will be passed to the `fastify` construct function.
 
-### Log request body
+### Log request body and headers
 
-By default, the server will log the request body. This behavior can be disabled by setting the `app.disableLogRequestBody` to `true`.
+By default, the server will log the request body and headers. These behaviors can be disabled by setting the `app.disableLogRequestBody` or `app.disableLogRequestHeaders` to `true`.
 
 ### Send request id header
 
@@ -165,6 +165,7 @@ app:
   globalAppVariable: app
   disableCors: false
   disableLogRequestBody: false
+  disableLogRequestHeaders: false
   disableSendRequestIdHeader: false
   disableApiErrorHandler: false
   internalServerErrorCode: 200

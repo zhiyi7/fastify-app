@@ -2,9 +2,13 @@
 
 ## Description
 
-This is a simple fasitfy application skeleton for JSON API server with some pre-defined features.
+This is a simple file-based routing fasitfy application skeleton for JSON API server with some pre-defined features.
 
 After calling the default exported function, the fastify server will listen on the specified host and port. The returned value of the function is a fastify instance. By default, this instance will also be registered to the global scope with variable name `app`. You can access it via `global.app` or just `app`. This name can be changed by setting the `app.globalAppVariable` in the config. To prevent this behavior, set the `app.disableGlobalAppVariable` to `true`.
+
+## File-based routing
+
+Any `{.js, .mjs, .ts}` file in the `app` and it's subfolders of your project root that does not starts with underscore(`_`) will be registered as a fastify plugin. The subfolder name will be the prefix. For example, if you have an `app/user/api.js` or `app/user/other-file.mjs` file, you can access it via `http://localhost:port/user/YOUR-API`.
 
 ## Reply helpers
 
@@ -66,10 +70,6 @@ Generate an uncaught error response.
 
 ## Other features
 
-### Database
-
-If the `database` section is set in the config, it will also connect to the database using the `knex` package. The initialized knex instance will be stored in the `global.knex` variable in the process scope.
-
 ### Config object
 
 The config object passed to the default exported function can be accessed via `app.config`
@@ -129,23 +129,20 @@ This handler can be disabled by setting the `app.disableApiErrorHandler` to `tru
 
 By default, the server will log the API error(`throw new ApiError()`). This behavior can be disabled by setting the `app.disableLogApiError` to `true`.
 
-### Orangize API prefix using folder
-
-You can organize your API by putting them in different folders. The folder name will be the prefix of the API. For example, if you have an `app/user/api.js` file, you can access it via `http://localhost:port/user/YOUR-API`. Only the file with the `api.js` will be registered as fastify plugin.
-
 ## Usage
 
 ### Install
 
 ```bash
 npm install fastify-app js-yaml
+npm install knex mysql2 # if you want to use a database
 ```
 
 > **Note**
 >
 > The `js-yaml` can be omitted if you don't want to use a yaml config file.
 
-### Create a config file (optional)
+### Create a config file
 
 Create a `config.yaml` file in your project root with the following example:
 
@@ -200,11 +197,11 @@ database:
     idleTimeoutMillis: 60000
 ```
 
-> If you don't want this package to connect to a database, just remove the `database` section from the config.
+### Create your first API endpoint
 
-## Create your first API endpoint
+> CommonJS and ES module are both supported.
 
-Create an `app` folder in your project root, and create an `api.js` file in it with the following content:
+Create an `app` folder in your project root, and create a js file in it, `api.js` for example (or `.mjs` or `.ts`), with the following content:
 
 ```javascript
 'use strict';
@@ -230,9 +227,62 @@ function plugin(fastify, opts, done) {
 
 After starting the server, this API endpoint can be accssed via `http://host:port/ok`.
 
-You can also create subfolders in the `app` folder to organize your API. If you have an `app/user/api.js` file, you can access it via `http://localhost:port/user/YOUR-API`.
+You can also create subfolders in the `app` folder to organize your API. If you have an `app/user/api.js` file, you can access it via `http://localhost:port/user/endpoint-in-api.js`.
 
-## Start the server
+Files with names starting with an underscore will not be registered to the fastify instance.
+
+### Start the server (CommonJS)
 ```javascript
-require('fastify-app')(require('js-yaml').load(require('fs').readFileSync('./config.yaml', 'utf8')))
+const FastifyApp = require('fastify-app').default;
+const { load } = require('js-yaml');
+const { readFileSync } = require('fs');
+const knex = require('knex');
+
+const config = load(readFileSync('./config.yaml', 'utf8'));
+
+/************************************
+ * Initialize knex and put it in global
+ ************************************/
+if (config.database?.client) {
+    Object.defineProperty(global, 'knex', {
+        value: knex({
+            client: config.database.client,
+            connection: config.database[config.database.client],
+            pool: config.database.pool
+        }),
+    });
+}
+
+FastifyApp(config);
 ```
+
+### Start the server (ES module)
+```javascript
+import FastifyApp from 'fastify-app';
+import { load } from 'js-yaml';
+import { readFileSync } from 'fs';
+import knex from 'knex';
+
+const config = load(readFileSync('./config.yaml', 'utf8'));
+
+/************************************
+ * Initialize knex and put it in global
+ ************************************/
+if (config.database?.client) {
+    Object.defineProperty(global, 'knex', {
+        value: knex.knex({
+            client: config.database.client,
+            connection: config.database[config.database.client],
+            pool: config.database.pool
+        }),
+    });
+}
+
+FastifyApp(config);
+```
+
+## Breaking changes
+
+### 1.1.0
+- The database is no longer initialized. You need to initialize the database connection yourself.
+- Route files are no longer limited to `api.js`. Any file that does not start with an underscore and ends with `{.js, .mjs, .ts}` will be registered to the fastify instance.

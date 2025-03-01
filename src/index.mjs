@@ -242,5 +242,16 @@ async function start() {
     });
 }
 
-export default fastifyInstance;
+const instanceProxy = new Proxy({}, {
+    get(target, prop) {
+      if (!fastifyInstance) return undefined;
+      return fastifyInstance[prop];
+    },
+    apply(target, thisArg, args) {
+      if (!fastifyInstance) return undefined;
+      return Reflect.apply(fastifyInstance, thisArg, args);
+    }
+});
+
+export default instanceProxy;
 export { init, start, ApiError };

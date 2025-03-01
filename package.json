@@ -1,6 +1,6 @@
 {
   "name": "fastify-app",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "src/index.mjs",
   "module": "src/index.mjs",

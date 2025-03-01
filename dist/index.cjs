@@ -370,4 +370,14 @@ function _start() {
   }));
   return _start.apply(this, arguments);
 }
-var _default = exports["default"] = fastifyInstance;
+var instanceProxy = new Proxy({}, {
+  get: function get(target, prop) {
+    if (!fastifyInstance) return undefined;
+    return fastifyInstance[prop];
+  },
+  apply: function apply(target, thisArg, args) {
+    if (!fastifyInstance) return undefined;
+    return Reflect.apply(fastifyInstance, thisArg, args);
+  }
+});
+var _default = exports["default"] = instanceProxy;

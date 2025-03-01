@@ -45,6 +45,7 @@ class ApiError extends Error {
  */
 
 let fastifyInstance;
+let configCopy;
 
 /**
  * Initialize a new Fastify instance with configured plugins and hooks.
@@ -52,6 +53,7 @@ let fastifyInstance;
  * @returns {Object} Fastify instance with added methods
  */
 async function init(config) {
+    configCopy = {...config};
     /************************************
      * Initialize fastify and put it in global
      ************************************/
@@ -61,12 +63,6 @@ async function init(config) {
         disableRequestLogging: false,
         bodyLimit: 52428800, //in bytes, 50Mb
     }, config.fastify));
-
-    /************************************
-     * put config in app, freezed
-     ************************************/
-    Object.freeze(config);
-    Object.defineProperty(fastifyInstance, 'config', { value: config });
 
     /************************************
      * Register cors plugin
@@ -230,7 +226,7 @@ async function init(config) {
 
 async function start() {
     return new Promise((resolve, reject) => {
-        fastifyInstance.listen(fastifyInstance.config.server, (err, address) => {
+        fastifyInstance.listen(configCopy.server, (err, address) => {
             if (err) {
                 console.log(err);
                 reject(err);

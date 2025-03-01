@@ -4,7 +4,7 @@
 
 This is a simple file-based routing fasitfy application skeleton for JSON API server with some pre-defined features.
 
-After calling the default exported function, the fastify server will listen on the specified host and port. The returned value of the function is a fastify instance. By default, this instance will also be registered to the global scope with variable name `app`. You can access it via `global.app` or just `app`. This name can be changed by setting the `app.globalAppVariable` in the config. To prevent this behavior, set the `app.disableGlobalAppVariable` to `true`.
+After calling the default exported function, the fastify server will listen on the specified host and port. The returned value of the function is a fastify instance.
 
 ## File-based routing
 
@@ -34,19 +34,20 @@ Can be disabled by setting the `app.disableReplyHelperFunctions` to `true`.
 }
 ```
 
-### `throw new ApiError(message, code, statusCode)`
+### `throw new ApiError(message, code, statusCode, data)`
 
 Send an error object to the client with message and code. The HTTP status code will be set to statusCode(defaults to 200).
 
 Can be disabled by setting the `app.disableApiErrorHandler` to `true`.
 
-`throw new ApiError('User Not found', 'err_code_user_not_found', 404)` will return with http status code 404:
+`throw new ApiError('User Not found', 'err_code_user_not_found', 404, {'error_field':'user'})` will return with http status code 404:
 
 ```json
 {
     "status": "error",
     "message": "User Not found",
-    "code": "err_code_user_not_found"
+    "code": "err_code_user_not_found",
+    "error_field": "user"
 }
 ```
 
@@ -70,10 +71,6 @@ Generate an uncaught error response.
 
 ## Other features
 
-### Config object
-
-The config object passed to the default exported function can be accessed via `app.config`
-
 ### Request state
 
 By default, a `state` object will be registered to the request object by using `fastify.decorateRequest`. This behavior can be disabled by setting the `app.disableAddRequestState` to `true`.
@@ -96,7 +93,7 @@ By default, the server will send a `Request-Id` header to the client. This behav
 
 ### ApiError handler and response
 
-By default, if `ApiError(message, code, statusCode)` is not caught by local error handler, the server will handle this ApiError and return the error object to the client, with HTTP status code `statusCode` which defaults to `200`.
+By default, if `ApiError(message, code, statusCode, data)` is not caught by local error handler, the server will handle this ApiError and return the error object to the client, with HTTP status code `statusCode` which defaults to `200`.
 
 The response format is:
 
@@ -104,7 +101,8 @@ The response format is:
 {
     "status": "error",
     "message": "custom error messsage string or object",
-    "code": "custom error code"
+    "code": "custom error code",
+    "data": "additional data"
 }
 ```
 
@@ -135,7 +133,6 @@ By default, the server will log the API error(`throw new ApiError()`). This beha
 
 ```bash
 npm install fastify-app js-yaml
-npm install knex mysql2 # if you want to use a database
 ```
 
 > **Note**
@@ -159,10 +156,10 @@ fastify:
       - "req.headers.authorization"
 
 app:
-  globalAppVariable: app
   disableCors: false
   disableLogRequestBody: false
   disableLogRequestHeaders: false
+  disableLogApiError: false
   disableSendRequestIdHeader: false
   disableApiErrorHandler: false
   internalServerErrorCode: 200
@@ -170,31 +167,7 @@ app:
   healthCheckRoutesPrefix: "/health-check"
   enableHealthCheckShowsGitRev: false
   disableAddRequestState: false
-  disableLogApiError: false
   disableReplyHelperFunctions: false
-
-database:
-  client: mysql2
-  mysql2:
-    host: 127.0.0.1
-    port: 3306
-    database: test
-    user: dbuser
-    password: dbpass
-    timezone: +08:00
-  pg:
-    host: localhost
-    port: 5432
-    user: dbuser
-    password: dbpass
-    database: test
-    schema: public
-    timezone: Asia/Shanghai
-    ssl: true
-  pool:
-    min: 1
-    max: 20
-    idleTimeoutMillis: 60000
 ```
 
 ### Create your first API endpoint
@@ -205,6 +178,7 @@ Create an `app` folder in your project root, and create a js file in it, `api.js
 
 ```javascript
 'use strict';
+const {ApiError} = require('fastify-app');
 
 module.exports = function() {
     // Put custom code here, runs before fastify initializing.
@@ -218,8 +192,11 @@ module.exports = function() {
 function plugin(fastify, opts, done) {
     fastify.get('/ok', async function(req, res) {
         return res.ok({
-            ok: 'It works!',
+            fooBar: 'It works!',
         })
+    })
+    fastify.get('/err', async function(req, res) {
+        throw new ApiError('User Not found', 'err_code_user_not_found', 404, {'foo':'bar'})
     })
     done()
 }
@@ -233,55 +210,41 @@ Files with names starting with an underscore will not be registered to the fasti
 
 ### Start the server (CommonJS)
 ```javascript
-const FastifyApp = require('fastify-app').default;
+const {default:fastifyApp, init, start} = require('fastify-app');
 const { load } = require('js-yaml');
 const { readFileSync } = require('fs');
 const knex = require('knex');
 
 const config = load(readFileSync('./config.yaml', 'utf8'));
 
-/************************************
- * Initialize knex and put it in global
- ************************************/
-if (config.database?.client) {
-    Object.defineProperty(global, 'knex', {
-        value: knex({
-            client: config.database.client,
-            connection: config.database[config.database.client],
-            pool: config.database.pool
-        }),
-    });
-}
-
-FastifyApp(config);
+;(async() => {
+    await init(config); //after calling init(), the fastifyApp is an initialized fastify instance.
+    await start(); //or you can write your own listen logic.
+})();
 ```
 
 ### Start the server (ES module)
 ```javascript
-import FastifyApp from 'fastify-app';
+import FastifyApp, {init, start, ApiError} from 'fastify-app';
 import { load } from 'js-yaml';
 import { readFileSync } from 'fs';
-import knex from 'knex';
 
 const config = load(readFileSync('./config.yaml', 'utf8'));
 
-/************************************
- * Initialize knex and put it in global
- ************************************/
-if (config.database?.client) {
-    Object.defineProperty(global, 'knex', {
-        value: knex.knex({
-            client: config.database.client,
-            connection: config.database[config.database.client],
-            pool: config.database.pool
-        }),
-    });
-}
-
-FastifyApp(config);
+;(async() => {
+    await init(config);
+    await start();
+})();
 ```
 
 ## Breaking changes
+
+### 2.0.0
+- Now the `fastify-app` default export is a variable that contains the fastify instance (which is undefined before calling `init()`).
+- The initialized fastify instance is no longer defined as a global property (There is no `global.app`).
+- The `config` object is now passed to the `init` function.
+- The `init` and `start` functions and `ApiError` class are now exported from the `fastify-app` module.
+- The `config` object is no longer defined as a property of the fastify app instance (There is no `global.app.config`).
 
 ### 1.1.0
 - The database is no longer initialized. You need to initialize the database connection yourself.

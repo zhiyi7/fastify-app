@@ -4,7 +4,7 @@
 
 This is a simple file-based routing fasitfy application skeleton for JSON API server with some pre-defined features.
 
-After calling the default exported function, the fastify server will listen on the specified host and port. The returned value of the function is a fastify instance.
+After calling the exported `init()` and `start()` functions, the fastify server will listen on the specified host and port. The default export is a fastify instance.
 
 ## File-based routing
 
@@ -135,8 +135,6 @@ By default, the server will log the API error(`throw new ApiError()`). This beha
 npm install fastify-app js-yaml
 ```
 
-> **Note**
->
 > The `js-yaml` can be omitted if you don't want to use a yaml config file.
 
 ### Create a config file
@@ -178,10 +176,13 @@ Create an `app` folder in your project root, and create a js file in it, `api.js
 
 ```javascript
 'use strict';
-const {ApiError} = require('fastify-app');
+
+const {default:fastifyAppInstance, ApiError} = require('fastify-app');
 
 module.exports = function() {
     // Put custom code here, runs before fastify initializing.
+    // The fastifyAppInstance is the fastify instance.
+    // You can use fastifyAppInstance to register plugins, decorators, etc.
     // your custom code
 
     // then return your plugin function to the fastify register.

@@ -23,6 +23,14 @@
     "type": "git",
     "url": "git+https://github.com/zhiyi7/fastify-app.git"
   },
+  "keywords": [
+    "fastify",
+    "api",
+    "server",
+    "template",
+    "web server",
+    "http server"
+  ],
   "author": "Zhiyi",
   "license": "ISC",
   "dependencies": {

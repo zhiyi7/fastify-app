@@ -41,6 +41,7 @@ class ApiError extends Error {
  * @property {boolean} [app.disableAddRequestState] - Whether to disable adding state object to request
  * @property {boolean} [app.disableReplyHelperFunctions] - Whether to disable reply helper functions
  * @property {number} [app.internalServerErrorCode] - Status code for internal server errors
+ * @property {Array} [app.sensitiveHeaders] - List of sensitive headers to be excluded from logs
  * @property {Object} [server] - Server configuration for listening
  */
 
@@ -75,11 +76,19 @@ async function init(config) {
      * Log request body and headers
      ************************************/
     if (!config.app?.disableLogRequestBody || !config?.app?.disableLogRequestHeaders) {
+        function filterHeaders(headers) {
+            const SENSITIVE_HEADERS = [...config?.app?.sensitiveHeaders || []];
+            const filtered = { ...headers };
+            for (const key of SENSITIVE_HEADERS) {
+                if (filtered[key]) filtered[key] = '[FILTERED]';
+            }
+            return filtered;
+        }
         fastifyInstance.addHook('preHandler', (req, res, done) => {
             const logContent = { url: req.url };
             if (!config?.app?.disableLogRequestBody && req.headers['content-type'] === 'application/json') {
                 let clone = null;
-                if (req.body && req.headers['content-length'] > 1000) {
+                if (req.body && parseInt(req.headers['content-length']) > 1000) {
                     clone = JSON.parse(JSON.stringify(req.body));
                     for (const key in clone) {
                         if (clone[key] && clone[key].length > 255) {
@@ -90,7 +99,7 @@ async function init(config) {
                 logContent.body = clone || req.body;
             }
             if (!config.app?.disableLogRequestHeaders) {
-                logContent.headers = req.headers;
+                logContent.headers = filterHeaders(req.headers);
             }
             req.log.info(logContent);
             done();

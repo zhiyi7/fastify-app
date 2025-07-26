@@ -20,16 +20,16 @@ Send a 200 response with the data and meta object.
 
 Can be disabled by setting the `app.disableReplyHelperFunctions` to `true`.
 
-`res.ok({ok: 'It works!'}, {addition: 'someValue'})`
+`res.ok({baz: 'It works!'}, {foo: 'bar'})`
 
 ```json
 {
     "status": "ok",
     "data": {
-        "ok": "It works!"
+        "baz": "It works!"
     },
     "meta": {
-        "addition": "someValue"
+        "foo": "bar"
     }
 }
 ```
@@ -38,18 +38,25 @@ Can be disabled by setting the `app.disableReplyHelperFunctions` to `true`.
 
 Send an error object to the client with message and code. The HTTP status code will be set to statusCode(defaults to 200).
 
-Can be disabled by setting the `app.disableApiErrorHandler` to `true`.
-
-`throw new ApiError('User Not found', 'err_code_user_not_found', 404, {'error_field':'user'})` will return with http status code 404:
+```javascript
+import { ApiError } from 'fastify-app';
+// and in your route handler:
+// ...
+throw new ApiError('User Not found', 'err_code_user_not_found', 404, {'error_field':'user'})
+```
+will return with http status code 404:
 
 ```json
 {
     "status": "error",
     "message": "User Not found",
     "code": "err_code_user_not_found",
-    "error_field": "user"
+    "data": {
+        "error_field": "username"
+    }
 }
 ```
+This feature can be disabled by setting the `app.disableApiErrorHandler` to `true`.
 
 ## Health-checking endpoints
 
@@ -81,7 +88,7 @@ By default, the server will add the CORS headers to the response. This behavior 
 
 ### Logging enabled
 
-By default, the server will log the request and response to console. This behavior can be disabled by setting the `fastify.disableRequestLogging` to `true`, or by setting the `fastify.logger`. All the settings under the `fastify` key will be passed to the `fastify` construct function.
+By default, the server will log the request and response to console. This behavior can be disabled by setting the `fastify.disableRequestLogging` to `true`. All the settings under the `fastify` key will be passed to the `fastify` construct function.
 
 ### Log request body and headers
 
@@ -94,23 +101,6 @@ By default, the server will log the request body and headers. These behaviors ca
 ### Send request id header
 
 By default, the server will send a `Request-Id` header to the client. This behavior can be disabled by setting the `app.disableSendRequestIdHeader` to `true`.
-
-### ApiError handler and response
-
-By default, if `ApiError(message, code, statusCode, data)` is not caught by local error handler, the server will handle this ApiError and return the error object to the client, with HTTP status code `statusCode` which defaults to `200`.
-
-The response format is:
-
-```json
-{
-    "status": "error",
-    "message": "custom error messsage string or object",
-    "code": "custom error code",
-    "data": "additional data"
-}
-```
-
-This behavior can be disabled by setting the `app.disableApiErrorHandler` to `true`.
 
 ### Other errors handler and default error response
 

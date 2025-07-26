@@ -80,7 +80,6 @@ var ApiError = exports.ApiError = /*#__PURE__*/function (_Error) {
  * @property {boolean} [app.disableAddRequestState] - Whether to disable adding state object to request
  * @property {boolean} [app.disableReplyHelperFunctions] - Whether to disable reply helper functions
  * @property {number} [app.internalServerErrorCode] - Status code for internal server errors
- * @property {Array} [app.sensitiveHeaders] - List of sensitive headers to be excluded from logs
  * @property {Object} [server] - Server configuration for listening
  */
 var fastifyInstance;
@@ -96,7 +95,7 @@ function init(_x) {
 }
 function _init() {
   _init = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(config) {
-    var _configCopy, _configCopy2, _config$app, _config$app2, _config$app3, _config$app4, _config$app7, _config$app10, _config$app11;
+    var _configCopy$fastify, _configCopy$fastify2, _config$app, _config$app2, _config$app3, _config$app4, _config$app7, _config$app10, _config$app11;
     var loggerConfig, _config$app6, _config$app8, _config$app$healthChe, _config$app9, _config$app$healthChe2, _config$app0, _config$app$healthChe3, _config$app1, rev, basePath, apiFiles, _iterator, _step, apiFile, filename, length, prefix, _t, _t2, _t3, _t4;
     return _regenerator().w(function (_context2) {
       while (1) switch (_context2.p = _context2.n) {
@@ -105,8 +104,8 @@ function _init() {
           /************************************
            * Initialize fastify and put it in global
            ************************************/
-          loggerConfig = _objectSpread({}, (_configCopy = configCopy) === null || _configCopy === void 0 || (_configCopy = _configCopy.fastify) === null || _configCopy === void 0 ? void 0 : _configCopy.logger);
-          (_configCopy2 = configCopy) === null || _configCopy2 === void 0 || (_configCopy2 = _configCopy2.fastify) === null || _configCopy2 === void 0 || delete _configCopy2.logger;
+          loggerConfig = _objectSpread({}, (_configCopy$fastify = configCopy.fastify) === null || _configCopy$fastify === void 0 ? void 0 : _configCopy$fastify.logger);
+          (_configCopy$fastify2 = configCopy.fastify) === null || _configCopy$fastify2 === void 0 || delete _configCopy$fastify2.logger;
           fastifyInstance = (0, _fastify["default"])(Object.assign({
             logger: Object.assign({
               serializers: {

@@ -87,6 +87,10 @@ By default, the server will log the request and response to console. This behavi
 
 By default, the server will log the request body and headers. These behaviors can be disabled by setting the `app.disableLogRequestBody` or `app.disableLogRequestHeaders` to `true`.
 
+> **Sensitive headers** 
+> 
+> If you want to redact sensitive headers from the logs, you can set the `fastify.logger.redact` option in the config.
+
 ### Send request id header
 
 By default, the server will send a `Request-Id` header to the client. This behavior can be disabled by setting the `app.disableSendRequestIdHeader` to `true`.
@@ -132,40 +136,41 @@ By default, the server will log the API error(`throw new ApiError()`). This beha
 ### Install
 
 ```bash
-npm install fastify-app js-yaml
+npm install fastify-app
 ```
-
-> The `js-yaml` can be omitted if you don't want to use a yaml config file.
 
 ### Create a config file
 
-Create a `config.yaml` file in your project root with the following example:
+Create a `config.js` file in your project root with the following example:
 
-```yaml
-server:
-  host: 0.0.0.0
-  port: 53004
-
-fastify:
-  disableRequestLogging: false
-  bodyLimit: 52428800 #in bytes, 50Mb
-  logger:
-    redact:
-      - "req.headers.authorization"
-
-app:
-  disableCors: false
-  disableLogRequestBody: false
-  disableLogRequestHeaders: false
-  disableLogApiError: false
-  disableSendRequestIdHeader: false
-  disableApiErrorHandler: false
-  internalServerErrorCode: 200
-  disableHealthCheckRoutes: false
-  healthCheckRoutesPrefix: "/health-check"
-  enableHealthCheckShowsGitRev: false
-  disableAddRequestState: false
-  disableReplyHelperFunctions: false
+```javascript
+export default {
+    server: {
+        host: '0.0.0.0',
+        port: 63004,
+    },
+    fastify: {
+        disableRequestLogging: false,
+        bodyLimit: 52428800, // 50Mb
+        logger: {
+            redact: ['req.headers.authorization'],
+        },
+    },
+    app: {
+        disableCors: false,
+        disableLogRequestBody: false,
+        disableLogRequestHeaders: false,
+        disableLogApiError: false,
+        disableSendRequestIdHeader: false,
+        disableApiErrorHandler: false,
+        internalServerErrorCode: 200,
+        disableHealthCheckRoutes: false,
+        healthCheckRoutesPrefix: '/health-check',
+        enableHealthCheckShowsGitRev: false,
+        disableAddRequestState: false,
+        disableReplyHelperFunctions: false,
+    },
+};
 ```
 
 ### Create your first API endpoint
@@ -212,11 +217,8 @@ Files with names starting with an underscore will not be registered to the fasti
 ### Start the server (CommonJS)
 ```javascript
 const {default:fastifyApp, init, start} = require('fastify-app');
-const { load } = require('js-yaml');
-const { readFileSync } = require('fs');
-const knex = require('knex');
 
-const config = load(readFileSync('./config.yaml', 'utf8'));
+const config = require('./config.js');
 
 ;(async() => {
     await init(config); //after calling init(), the fastifyApp is an initialized fastify instance.
@@ -227,10 +229,7 @@ const config = load(readFileSync('./config.yaml', 'utf8'));
 ### Start the server (ES module)
 ```javascript
 import FastifyApp, {init, start, ApiError} from 'fastify-app';
-import { load } from 'js-yaml';
-import { readFileSync } from 'fs';
-
-const config = load(readFileSync('./config.yaml', 'utf8'));
+import config from './config.js';
 
 ;(async() => {
     await init(config);

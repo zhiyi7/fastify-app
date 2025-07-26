@@ -41,7 +41,6 @@ class ApiError extends Error {
  * @property {boolean} [app.disableAddRequestState] - Whether to disable adding state object to request
  * @property {boolean} [app.disableReplyHelperFunctions] - Whether to disable reply helper functions
  * @property {number} [app.internalServerErrorCode] - Status code for internal server errors
- * @property {Array} [app.sensitiveHeaders] - List of sensitive headers to be excluded from logs
  * @property {Object} [server] - Server configuration for listening
  */
 
@@ -58,12 +57,33 @@ async function init(config) {
     /************************************
      * Initialize fastify and put it in global
      ************************************/
+    const loggerConfig = {...configCopy.fastify?.logger};
+    delete configCopy.fastify?.logger;
     fastifyInstance = fastify(Object.assign({
-        logger: true,
+        logger: Object.assign({
+            serializers: {
+                res(res) {
+                    return {
+                        statusCode: res.statusCode,
+                        contentLength: res.getHeader('content-length'),
+                    }
+                },
+                req(req) {
+                    return {
+                        remoteAddress: req.ip,
+                        method: req.method,
+                        host: req.hostname,
+                        url: req.url,
+                        parameters: req.parameters,
+                        headers: configCopy.app.disableLogRequestHeaders ? null : req.headers
+                    };
+                }
+            }
+        }, loggerConfig),
         trustProxy: true,
         disableRequestLogging: false,
         bodyLimit: 52428800, //in bytes, 50Mb
-    }, config.fastify));
+    }, configCopy.fastify));
 
     /************************************
      * Register cors plugin
@@ -75,18 +95,10 @@ async function init(config) {
     /************************************
      * Log request body and headers
      ************************************/
-    if (!config.app?.disableLogRequestBody || !config?.app?.disableLogRequestHeaders) {
-        function filterHeaders(headers) {
-            const SENSITIVE_HEADERS = [...config?.app?.sensitiveHeaders || []];
-            const filtered = { ...headers };
-            for (const key of SENSITIVE_HEADERS) {
-                if (filtered[key]) filtered[key] = '[FILTERED]';
-            }
-            return filtered;
-        }
+    if (!config.app?.disableLogRequestBody) {
         fastifyInstance.addHook('preHandler', (req, res, done) => {
             const logContent = { url: req.url };
-            if (!config?.app?.disableLogRequestBody && req.headers['content-type'] === 'application/json') {
+            if (req.headers['content-type'] === 'application/json') {
                 let clone = null;
                 if (req.body && parseInt(req.headers['content-length']) > 1000) {
                     clone = JSON.parse(JSON.stringify(req.body));
@@ -97,9 +109,6 @@ async function init(config) {
                     }
                 }
                 logContent.body = clone || req.body;
-            }
-            if (!config.app?.disableLogRequestHeaders) {
-                logContent.headers = filterHeaders(req.headers);
             }
             req.log.info(logContent);
             done();

@@ -89,7 +89,13 @@ async function init(config) {
      * Register cors plugin
      ************************************/
     if (!config.app?.disableCors) {
-        fastifyInstance.register(cors);
+        fastifyInstance.register(cors, {
+            origin: true,
+            methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'PATCH'],
+            allowedHeaders: '*',
+            credentials: true,
+            maxAge: 86400,
+        });
     }
 
     /************************************

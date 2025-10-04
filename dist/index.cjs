@@ -136,7 +136,13 @@ function _init() {
            * Register cors plugin
            ************************************/
           if (!((_config$app = config.app) !== null && _config$app !== void 0 && _config$app.disableCors)) {
-            fastifyInstance.register(_cors["default"]);
+            fastifyInstance.register(_cors["default"], {
+              origin: true,
+              methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'PATCH'],
+              allowedHeaders: '*',
+              credentials: true,
+              maxAge: 86400
+            });
           }
 
           /************************************

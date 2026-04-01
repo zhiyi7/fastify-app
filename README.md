@@ -1,24 +1,104 @@
-# A simple fastify application server
+# A simple Fastify application skeleton for JSON API server
 
 ## Description
 
-This is a simple file-based routing fasitfy application skeleton for JSON API server with some pre-defined features.
+This is a simple Fastify 5.8 file-based routing application skeleton for JSON API servers with some pre-defined features.
 
-After calling the exported `init()` and `start()` functions, the fastify server will listen on the specified host and port. The default export is a fastify instance.
+After calling the exported `init()` and `start()` functions, the Fastify server will listen on the specified host and port. The default export is a Fastify instance proxy that becomes usable after `init()`.
+
+## Installation
+
+Just let your AI agent follow the instructions in `ai/INSTALL.md` to set up the scaffold in your project.
+
+In detailed steps:
+1. Create a project directory
+2. Open that directory using your AI agent
+3. Copy the raw content of `ai/INSTALL.md`
+4. Paste it into the dialog and press Enter
+
+That's it! No `npx create-xxxx` or manual file creation needed, do things the agentic way.
 
 ## File-based routing
 
-Any `{.js, .mjs, .ts}` file in the `app` and it's subfolders of your project root that does not starts with underscore(`_`) will be registered as a fastify plugin. The subfolder name will be the prefix. For example, if you have an `app/user/api.js` or `app/user/other-file.mjs` file, you can access it via `http://localhost:port/user/YOUR-API`.
+Any `.js`, `.mjs`, or `.ts` file in `app/**` that does not start with underscore (`_`) will be registered as a Fastify plugin. The folder name becomes the route prefix. For example, `app/user/api.js` or `app/user/other-file.mjs` will be available under `http://localhost:port/user/...`.
+
+By default, file names are **not** included in the generated prefix. If you set `app.includeFileNameInRoutePrefix` to `true`, the file name will be appended as another prefix segment, except for `index` files. For example:
+
+- `app/user/profile.mjs` -> `/user/profile/...`
+- `app/user/index.mjs` -> `/user/...`
+
+You can also control how generated prefix segments are normalized with `app.routePrefixCase`:
+
+- `preserve` (default): keep directory and file names as-is
+- `kebab-case`: normalize every participating prefix segment to kebab-case
+
+For example, with `app.includeFileNameInRoutePrefix = true` and `app.routePrefixCase = 'kebab-case'`, `app/adminPanel/userSettings.mjs` becomes `/admin-panel/user-settings/...`.
+
+You can change the route discovery directory with `app.routesDirectory`. Route files may export either a default factory function or a named `plugin` export, but the recommended style is an anonymous default-exported factory that returns an anonymous plugin function.
+
+## Middleware-style patterns
+
+In this scaffold, prefer these two straightforward patterns:
+
+### File-level hooks with `addHook`
+
+Use a file-level hook when every route defined in the same route file should share the same behavior.
+
+```javascript
+export default function () {
+    return async function (fastify) {
+        fastify.addHook('preHandler', async function (request) {
+            request.state.traceId = request.headers['x-trace-id'] ?? request.id;
+        });
+
+        fastify.get('/context', async function (request, reply) {
+            return reply.ok({
+                traceId: request.state.traceId,
+            });
+        });
+    };
+}
+```
+
+### Route-level `preHandler` in options
+
+Use route options when only one route or a small subset of routes needs the guard.
+
+```javascript
+import { ApiError } from 'fastify-app';
+
+export default function () {
+    return async function (fastify) {
+        fastify.get(
+            '/admin',
+            {
+                preHandler: async function (request) {
+                    if (request.headers['x-role'] !== 'admin') {
+                        throw new ApiError('Admin role required', 'ERR_ROLE_REQUIRED', 403, {
+                            requiredRole: 'admin',
+                        });
+                    }
+                },
+            },
+            async function (request, reply) {
+                return reply.ok({ ok: true });
+            }
+        );
+    };
+}
+```
+
+If multiple files need the same guard, extract a plain helper function and reuse it from each route file. Avoid building a directory-wide middleware penetration layer unless you really need a custom plugin tree.
 
 ## Reply helpers
 
-There are some useful helpers can be used in the route handler. In the following example, the `req` is the first parameter of the handler, also know as `request`. The `res` is the second parameter of the handler function, also known as the `reply` object in fastify.
+There are some useful helpers you can use in the route handler. In the following example, `req` is the first parameter of the handler, also known as `request`, and `res` is the second parameter, also known as `reply`.
 
 ### `res.ok(data, meta)`
 
 Send a 200 response with the data and meta object.
 
-Can be disabled by setting the `app.disableReplyHelperFunctions` to `true`.
+Can be disabled by setting `app.disableReplyHelperFunctions` to `true`.
 
 `res.ok({baz: 'It works!'}, {foo: 'bar'})`
 
@@ -56,13 +136,17 @@ will return with http status code 404:
     }
 }
 ```
-This feature can be disabled by setting the `app.disableApiErrorHandler` to `true`.
+This feature can be disabled by setting `app.disableApiErrorHandler` to `true`.
 
 ## Health-checking endpoints
 
-By default, some endpoints for health checking are registered. This behavior can be disabled by setting the `app.disableHealthCheckRoutes` to `true`.
+By default, some endpoints for health checking are registered. This behavior can be disabled by setting `app.disableHealthCheckRoutes` to `true`.
 
-The prefix of these endpoints can be changed by setting the `app.healthCheckRoutesPrefix` in the config.
+The prefix of these endpoints can be changed by setting `app.healthCheckRoutesPrefix` in the config. Leading and trailing slashes are normalized.
+
+If `app.enableHealthCheckShowsGitRev` is enabled, the git revision is resolved lazily on the first request and cached afterwards. You can adjust the command timeout with `app.healthCheckGitRevTimeout`.
+
+You can also control whether the ping payload includes timezone and random noise by setting `app.healthCheckExposeTimezone` and `app.healthCheckExposeRandom`.
 
 ### `GET|POST /health-check/ping`
 
@@ -84,15 +168,26 @@ By default, a `state` object will be registered to the request object by using `
 
 ### CORS
 
-By default, the server will add the CORS headers to the response. This behavior can be disabled by setting the `app.disableCors` to `true`.
+By default, the server will add the CORS headers to the response. This behavior can be disabled by setting `app.disableCors` to `true`.
+
+If you need more control, pass `app.corsOptions`; it will be merged with the scaffold's default CORS settings.
 
 ### Logging enabled
 
-By default, the server will log the request and response to console. This behavior can be disabled by setting the `fastify.disableRequestLogging` to `true`. All the settings under the `fastify` key will be passed to the `fastify` construct function.
+By default, the server will log the request and response to console. This behavior can be disabled by setting `fastify.disableRequestLogging` to `true`. All settings under the `fastify` key are passed to the Fastify constructor.
 
 ### Log request body and headers
 
-By default, the server will log the request body and headers. These behaviors can be disabled by setting the `app.disableLogRequestBody` or `app.disableLogRequestHeaders` to `true`.
+By default, the server will log the request body and headers. These behaviors can be disabled by setting `app.disableLogRequestBody` or `app.disableLogRequestHeaders` to `true`.
+
+Large request bodies are truncated recursively before logging. You can tune this behavior with:
+
+- `app.requestBodyLogThreshold`
+- `app.requestBodyLogMaxStringLength`
+- `app.requestBodyLogMaxArrayLength`
+- `app.requestBodyLogMaxDepth`
+- `app.requestBodyLogLevel`
+- `app.requestBodyLogContentTypes`
 
 > **Sensitive headers** 
 > 
@@ -100,11 +195,11 @@ By default, the server will log the request body and headers. These behaviors ca
 
 ### Send request id header
 
-By default, the server will send a `Request-Id` header to the client. This behavior can be disabled by setting the `app.disableSendRequestIdHeader` to `true`.
+By default, the server will send a `Request-Id` header to the client. This behavior can be disabled by setting `app.disableSendRequestIdHeader` to `true`.
 
 ### Other errors handler and default error response
 
-By default, the server will handle the uncaught errors and return the error object to the client. The HTTP status code defaults to 200 which also can be changed by settting `app.InternalServerErrorCode`. If `process.env.NODE_ENV === 'development'`, the error detail will be sent to the client.
+By default, the server will handle uncaught errors and return a generic error object to the client. The HTTP status code defaults to `200`, and can be changed with `app.internalServerErrorCode`. If `process.env.NODE_ENV === 'development'`, the error detail will be sent to the client.
 
 The response format is:
 
@@ -115,11 +210,13 @@ The response format is:
 }
 ```
 
-This handler can be disabled by setting the `app.disableApiErrorHandler` to `true`.
+This handler can be disabled by setting `app.disableApiErrorHandler` to `true`.
 
 ### Log API error
 
-By default, the server will log the API error(`throw new ApiError()`). This behavior can be disabled by setting the `app.disableLogApiError` to `true`.
+By default, the server will log the API error (`throw new ApiError()`). This behavior can be disabled by setting `app.disableLogApiError` to `true`.
+
+If needed, you can change the log severity for ApiError entries with `app.apiErrorLogLevel`.
 
 ## Usage
 
@@ -148,17 +245,33 @@ export default {
     },
     app: {
         disableCors: false,
+        corsOptions: {
+            exposedHeaders: ['request-id'],
+        },
         disableLogRequestBody: false,
         disableLogRequestHeaders: false,
         disableLogApiError: false,
+        apiErrorLogLevel: 'error',
         disableSendRequestIdHeader: false,
         disableApiErrorHandler: false,
         internalServerErrorCode: 200,
         disableHealthCheckRoutes: false,
         healthCheckRoutesPrefix: '/health-check',
         enableHealthCheckShowsGitRev: false,
+        healthCheckGitRevTimeout: 1000,
         disableAddRequestState: false,
         disableReplyHelperFunctions: false,
+        healthCheckExposeTimezone: true,
+        healthCheckExposeRandom: true,
+        includeFileNameInRoutePrefix: false,
+        routePrefixCase: 'preserve',
+        requestBodyLogThreshold: 1000,
+        requestBodyLogMaxStringLength: 255,
+        requestBodyLogMaxArrayLength: 20,
+        requestBodyLogMaxDepth: 5,
+        requestBodyLogLevel: 'info',
+        requestBodyLogContentTypes: ['application/json'],
+        routesDirectory: 'app',
     },
 };
 ```
@@ -167,61 +280,56 @@ export default {
 
 > CommonJS and ES module are both supported.
 
-Create an `app` folder in your project root, and create a js file in it, `api.js` for example (or `.mjs` or `.ts`), with the following content:
+Create an `app` folder in your project root, and create a JS file in it, `api.js` for example (or `.mjs` or `.ts`), with the following content:
 
 ```javascript
 'use strict';
 
-const {default:fastifyAppInstance, ApiError} = require('fastify-app');
+const { ApiError } = require('fastify-app');
 
-module.exports = function() {
-    // Put custom code here, runs before fastify initializing.
-    // The fastifyAppInstance is the fastify instance.
-    // You can use fastifyAppInstance to register plugins, decorators, etc.
-    // your custom code
+module.exports = function () {
+    return async function (fastify) {
+        fastify.get('/ok', async function (req, res) {
+            return res.ok({
+                fooBar: 'It works!',
+            });
+        });
 
-    // then return your plugin function to the fastify register.
-
-    return plugin
-}
-
-function plugin(fastify, opts, done) {
-    fastify.get('/ok', async function(req, res) {
-        return res.ok({
-            fooBar: 'It works!',
-        })
-    })
-    fastify.get('/err', async function(req, res) {
-        throw new ApiError('User Not found', 'err_code_user_not_found', 404, {'foo':'bar'})
-    })
-    done()
-}
+        fastify.get('/err', async function () {
+            throw new ApiError('User Not found', 'err_code_user_not_found', 404, { foo: 'bar' });
+        });
+    };
+};
 ```
 
-After starting the server, this API endpoint can be accssed via `http://host:port/ok`.
+Use the `fastify` argument passed into the returned plugin. Do not use the package default export inside route files.
 
-You can also create subfolders in the `app` folder to organize your API. If you have an `app/user/api.js` file, you can access it via `http://localhost:port/user/endpoint-in-api.js`.
+After starting the server, this API endpoint can be accessed via `http://host:port/ok`.
+
+You can also create subfolders in the `app` folder to organize your API. If you have an `app/user/api.js` file, routes inside it are served under `http://localhost:port/user/...`.
+
+If you prefer file names to be part of the generated prefix, set `app.includeFileNameInRoutePrefix` to `true`. When combined with `app.routePrefixCase = 'kebab-case'`, both directory and file-name segments are normalized before being registered.
 
 Files with names starting with an underscore will not be registered to the fastify instance.
 
 ### Start the server (CommonJS)
 ```javascript
-const {default:fastifyApp, init, start} = require('fastify-app');
+const { init, start } = require('fastify-app');
 
 const config = require('./config.js');
 
-;(async() => {
-    await init(config); //after calling init(), the fastifyApp is an initialized fastify instance.
-    await start(); //or you can write your own listen logic.
+;(async () => {
+    await init(config);
+    await start();
 })();
 ```
 
 ### Start the server (ES module)
 ```javascript
-import FastifyApp, {init, start, ApiError} from 'fastify-app';
+import { init, start } from 'fastify-app';
 import config from './config.js';
 
-;(async() => {
+;(async () => {
     await init(config);
     await start();
 })();

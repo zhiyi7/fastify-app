@@ -1,6 +1,6 @@
 {
   "name": "fastify-app",
-  "version": "2.0.6",
+  "version": "2.1.0",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "src/index.mjs",
   "module": "src/index.mjs",
@@ -16,7 +16,9 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "babel src --out-dir dist --extensions \".mjs\" --out-file-extension \".cjs\""
+    "build": "babel src --out-dir dist --extensions \".mjs\" --out-file-extension \".cjs\"",
+    "hooks:install": "node scripts/setup-git-hooks.mjs",
+    "test": "node --test"
   },
   "homepage": "https://github.com/zhiyi7/fastify-app",
   "repository": {
@@ -34,13 +36,13 @@
   "author": "Zhiyi",
   "license": "ISC",
   "dependencies": {
-    "@fastify/cors": "^11.0.1",
+    "@fastify/cors": "^11.2.0",
     "fast-glob": "^3.3.3",
-    "fastify": "^5.4.0"
+    "fastify": "^5.8.4"
   },
   "devDependencies": {
-    "@babel/cli": "^7.25.9",
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0"
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2"
   }
 }

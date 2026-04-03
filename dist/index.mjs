@@ -1,49 +1,12 @@
-"use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
 // src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  ApiError: () => ApiError,
-  default: () => index_default,
-  init: () => init,
-  start: () => start
-});
-module.exports = __toCommonJS(index_exports);
-var import_node_path = __toESM(require("path"));
-var import_node_child_process = require("child_process");
-var import_node_util = require("util");
-var import_node_url = require("url");
-var import_cors = __toESM(require("@fastify/cors"));
-var import_fast_glob = __toESM(require("fast-glob"));
-var import_fastify = __toESM(require("fastify"));
-var execFileAsync = (0, import_node_util.promisify)(import_node_child_process.execFile);
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { pathToFileURL } from "url";
+import cors from "@fastify/cors";
+import fastGlob from "fast-glob";
+import fastify from "fastify";
+var execFileAsync = promisify(execFile);
 var defaultRequestBodyLogThreshold = 1e3;
 var defaultRequestBodyLogMaxStringLength = 255;
 var defaultRequestBodyLogMaxArrayLength = 20;
@@ -105,11 +68,11 @@ function normalizeRouteSegment(segment, routePrefixCase = "preserve") {
   return segment;
 }
 function buildRoutePrefix(apiFile, appDirectory, appConfig) {
-  const relativeFilePath = import_node_path.default.relative(appDirectory, apiFile);
-  const relativeDirectory = import_node_path.default.dirname(relativeFilePath);
-  const routeSegments = relativeDirectory === "." ? [] : relativeDirectory.split(import_node_path.default.sep).filter(Boolean);
+  const relativeFilePath = path.relative(appDirectory, apiFile);
+  const relativeDirectory = path.dirname(relativeFilePath);
+  const routeSegments = relativeDirectory === "." ? [] : relativeDirectory.split(path.sep).filter(Boolean);
   if (appConfig.includeFileNameInRoutePrefix) {
-    const fileName = import_node_path.default.parse(relativeFilePath).name;
+    const fileName = path.parse(relativeFilePath).name;
     if (fileName && fileName !== "index") {
       routeSegments.push(fileName);
     }
@@ -203,15 +166,15 @@ function createGitRevisionResolver(basePath, appConfig) {
   };
 }
 function resolveRouteDirectory(basePath, appConfig) {
-  return import_node_path.default.resolve(basePath, appConfig.routesDirectory ?? "app");
+  return path.resolve(basePath, appConfig.routesDirectory ?? "app");
 }
 async function discoverRouteFiles(appDirectory) {
-  const apiFiles = await (0, import_fast_glob.default)("**/*.{js,mjs,ts}", {
+  const apiFiles = await fastGlob("**/*.{js,mjs,ts}", {
     cwd: appDirectory,
     onlyFiles: true,
     absolute: true
   });
-  return apiFiles.filter((apiFile) => !import_node_path.default.basename(apiFile).startsWith("_")).sort((left, right) => left.localeCompare(right));
+  return apiFiles.filter((apiFile) => !path.basename(apiFile).startsWith("_")).sort((left, right) => left.localeCompare(right));
 }
 function resolveRoutePlugin(importedModule, apiFile) {
   if (typeof importedModule.default === "function") {
@@ -239,7 +202,7 @@ async function init(config) {
   const normalizedLoggerConfig = isRecord(rawLoggerConfig) ? rawLoggerConfig : {};
   const { serializers, ...loggerConfig } = normalizedLoggerConfig;
   const customSerializers = isRecord(serializers) ? serializers : {};
-  const app = (0, import_fastify.default)({
+  const app = fastify({
     logger: {
       serializers: {
         res(reply) {
@@ -269,7 +232,7 @@ async function init(config) {
   });
   fastifyInstance = app;
   if (!appConfig.disableCors) {
-    app.register(import_cors.default, {
+    app.register(cors, {
       ...defaultCorsOptions,
       ...appConfig.corsOptions ?? {}
     });
@@ -378,7 +341,7 @@ async function init(config) {
     prefix: buildRoutePrefix(apiFile, appDirectory, appConfig)
   }));
   const importedModules = await Promise.all(
-    routeEntries.map(({ apiFile }) => import((0, import_node_url.pathToFileURL)(apiFile).href))
+    routeEntries.map(({ apiFile }) => import(pathToFileURL(apiFile).href))
   );
   routeEntries.forEach(({ apiFile, prefix }, index) => {
     app.register(resolveRoutePlugin(importedModules[index], apiFile), {
@@ -410,9 +373,9 @@ var instanceProxy = new Proxy({}, {
   }
 });
 var index_default = instanceProxy;
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   ApiError,
+  index_default as default,
   init,
   start
-});
+};

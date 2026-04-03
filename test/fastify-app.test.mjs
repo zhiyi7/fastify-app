@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
-import { init, start } from '../src/index.mjs';
+import { init, start } from 'fastify-app';
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/scaffold/', import.meta.url));
 const previousNodeEnv = process.env.NODE_ENV;

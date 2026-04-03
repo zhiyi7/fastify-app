@@ -1,6 +1,6 @@
 'use strict';
 
-import { ApiError } from '../../../../src/index.mjs';
+import { ApiError } from 'fastify-app';
 
 export default function () {
     return async function (fastify) {

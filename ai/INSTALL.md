@@ -2,6 +2,8 @@
 
 `fastify-app` is a Fastify 5 file-based routing scaffold for JSON APIs.
 
+The package itself is authored in TypeScript and already ships prebuilt CommonJS, ESM, and type declaration outputs, so consumers can install it directly without transpiling `node_modules/fastify-app`.
+
 You use this guide to initialize a new project scaffold based on `fastify-app`.
 
 ## What to do
@@ -14,6 +16,10 @@ You use this guide to initialize a new project scaffold based on `fastify-app`.
 You are creating a real, runnable application scaffold, so the file and its contents can be adjusted as needed, but make sure to keep the structure complete and retain the comments.
 
 If any file exists, you just choose a new file name and keep going.
+
+Use the `.mjs` filenames below for a zero-config ESM scaffold. If the target project already standardizes on TypeScript, the same structure can be created as `server.ts`, `config.ts`, and `.ts` route files instead.
+
+Do not copy `fastify-app`'s internal `src/index.ts` or `dist/*` files into the target project. Always consume the package entry from `fastify-app`.
 
 ## Project structure to create
 
@@ -49,6 +55,8 @@ import config from './config.mjs';
     await start();
 })();
 ```
+
+For a TypeScript-first project, the same file can be created as `server.ts` with identical imports.
 
 ### `config.mjs`
 
@@ -100,6 +108,8 @@ export default {
     },
 };
 ```
+
+For TypeScript projects, it is also valid to export the same object with `satisfies FastifyConfig` after importing `type FastifyConfig` from `fastify-app`.
 
 ### `app/index.mjs`
 

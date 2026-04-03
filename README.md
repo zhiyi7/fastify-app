@@ -6,6 +6,14 @@ This is a simple Fastify 5.8 file-based routing application skeleton for JSON AP
 
 After calling the exported `init()` and `start()` functions, the Fastify server will listen on the specified host and port. The default export is a Fastify instance proxy that becomes usable after `init()`.
 
+`fastify-app` itself is authored in TypeScript and published with prebuilt outputs for all supported consumption styles:
+
+- `dist/index.cjs` for CommonJS
+- `dist/index.mjs` for ESM
+- `dist/index.d.ts` and `dist/index.d.mts` for TypeScript tooling
+
+That means existing `require('fastify-app')` and `import ... from 'fastify-app'` callers can keep their current code, and TypeScript projects get types automatically.
+
 ## Installation
 
 Just let your AI agent follow the instructions in `ai/INSTALL.md` to set up the scaffold in your project.
@@ -17,6 +25,16 @@ In detailed steps:
 4. Paste it into the dialog and press Enter
 
 That's it! No `npx create-xxxx` or manual file creation needed, do things the agentic way.
+
+## Repository development
+
+If you are working on this repository itself instead of consuming the published package:
+
+- source entry: `src/index.ts`
+- build command: `npm run build`
+- build tool: `tsup`
+- emitted files: `dist/index.cjs`, `dist/index.mjs`, `dist/index.d.ts`, `dist/index.d.mts`
+- `npm test` runs the build first and then executes the integration suite
 
 ## File-based routing
 
@@ -226,9 +244,11 @@ If needed, you can change the log severity for ApiError entries with `app.apiErr
 npm install fastify-app
 ```
 
+The published package already includes its compiled `dist/` outputs and type declarations, so consumers do not need to transpile `node_modules/fastify-app`.
+
 ### Create a config file
 
-Create a `config.js` file in your project root with the following example:
+Create a config file in your project root with an extension that matches your runtime, such as `config.cjs`, `config.mjs`, or compiled TypeScript output. The example below uses ESM syntax:
 
 ```javascript
 export default {
@@ -278,7 +298,7 @@ export default {
 
 ### Create your first API endpoint
 
-> CommonJS and ES module are both supported.
+> CommonJS, ES module, and TypeScript are all supported.
 
 Create an `app` folder in your project root, and create a JS file in it, `api.js` for example (or `.mjs` or `.ts`), with the following content:
 
@@ -334,6 +354,25 @@ import config from './config.js';
     await start();
 })();
 ```
+
+### Start the server (TypeScript)
+```typescript
+import { init, start, type FastifyConfig } from 'fastify-app';
+
+const config = {
+    server: {
+        host: '0.0.0.0',
+        port: 63004,
+    },
+} satisfies FastifyConfig;
+
+;(async () => {
+    await init(config);
+    await start();
+})();
+```
+
+If you keep your app config in its own TypeScript module, you can also export it with `satisfies FastifyConfig` for editor hints and safer refactors.
 
 ## Breaking changes
 

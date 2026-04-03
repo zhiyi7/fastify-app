@@ -19,6 +19,7 @@ The package default export is a proxy to the singleton Fastify instance created 
 Route discovery is controlled by `app.routesDirectory` in config.
 
 - default route directory: `app`
+- route files may be `.js`, `.mjs`, or `.ts`
 - files whose basename starts with `_` are ignored by auto-discovery
 - by default, folder names determine the generated prefix
 - file names only join the prefix when `app.includeFileNameInRoutePrefix = true`

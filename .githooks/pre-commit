@@ -5,4 +5,4 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
 npm run build
-git add dist/index.cjs
+git add dist

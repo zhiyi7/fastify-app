@@ -10,7 +10,7 @@ After calling the exported `init()` and `start()` functions, the Fastify server 
 
 - `dist/index.cjs` for CommonJS
 - `dist/index.mjs` for ESM
-- `dist/index.d.ts` and `dist/index.d.mts` for TypeScript tooling
+- `dist/index.d.cts` and `dist/index.d.mts` for TypeScript tooling
 
 That means existing `require('fastify-app')` and `import ... from 'fastify-app'` callers can keep their current code, and TypeScript projects get types automatically.
 
@@ -32,8 +32,8 @@ If you are working on this repository itself instead of consuming the published 
 
 - source entry: `src/index.ts`
 - build command: `npm run build`
-- build tool: `tsup`
-- emitted files: `dist/index.cjs`, `dist/index.mjs`, `dist/index.d.ts`, `dist/index.d.mts`
+- build tool: `tsdown`
+- emitted files: `dist/index.cjs`, `dist/index.mjs`, `dist/index.d.cts`, `dist/index.d.mts`
 - `npm test` runs the build first and then executes the integration suite
 
 ## File-based routing
@@ -192,7 +192,11 @@ If you need more control, pass `app.corsOptions`; it will be merged with the sca
 
 ### Logging enabled
 
-By default, the server will log the request and response to console. This behavior can be disabled by setting `fastify.disableRequestLogging` to `true`. All settings under the `fastify` key are passed to the Fastify constructor.
+By default, the server will log the request and response to console. The scaffold keeps the legacy `fastify.disableRequestLogging` configuration compatible, and internally converts it to Fastify's `LogController` so the deprecated top-level Fastify option is not used.
+
+Set `fastify.disableRequestLogging` to `true` to disable Fastify's request lifecycle logs while keeping the scaffold's own request-body logs. Set it to `false` (or omit it) to keep the default Fastify request logs. All other settings under the `fastify` key are passed to the Fastify constructor.
+
+When constructing Fastify directly, use `logController: new LogController({ disableRequestLogging: true })` instead of the deprecated top-level option.
 
 ### Log request body and headers
 

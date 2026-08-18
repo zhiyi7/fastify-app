@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import cors, { type FastifyCorsOptions } from '@fastify/cors';
 import fastGlob from 'fast-glob';
 import fastify, {
+    LogController,
     type FastifyBaseLogger,
     type FastifyInstance,
     type FastifyListenOptions,
@@ -353,10 +354,16 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
         contentTypes: appConfig.requestBodyLogContentTypes ?? defaultRequestBodyLogContentTypes,
     };
     const basePath = process.cwd();
-    const { logger: rawLoggerConfig, ...restFastifyConfig } = fastifyConfig;
+    const {
+        logger: rawLoggerConfig,
+        disableRequestLogging,
+        logController: rawLogController,
+        ...restFastifyConfig
+    } = fastifyConfig;
     const normalizedLoggerConfig = isRecord(rawLoggerConfig) ? rawLoggerConfig : {};
     const { serializers, ...loggerConfig } = normalizedLoggerConfig;
     const customSerializers = isRecord(serializers) ? serializers : {};
+    const logController = rawLogController ?? new LogController({ disableRequestLogging });
 
     const app = fastify({
         logger: {
@@ -383,8 +390,8 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
             },
             ...loggerConfig,
         },
+        logController,
         trustProxy: true,
-        disableRequestLogging: false,
         bodyLimit: 52428800,
         ...restFastifyConfig,
     }) as unknown as FastifyAppInstance;

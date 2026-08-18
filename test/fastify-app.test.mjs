@@ -223,6 +223,69 @@ test('默认脚手架功能和路由都能工作', { concurrency: false }, async
     );
 });
 
+test('兼容 fastify.disableRequestLogging=false 并保留 Fastify 请求日志', { concurrency: false }, async () => {
+    await withServer(
+        {
+            fastify: {
+                disableRequestLogging: false,
+            },
+        },
+        async ({ port, logs }) => {
+            clearLogs(logs);
+
+            await requestJson(port, '/echo', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json; charset=utf-8',
+                },
+                body: JSON.stringify({ message: 'logging enabled' }),
+            });
+
+            const logEntries = parseJsonLines(logs);
+            assert.ok(
+                logEntries.some((entry) => entry.req?.url === '/echo'),
+                'disableRequestLogging=false 时应记录 Fastify 请求日志'
+            );
+            assert.ok(
+                logEntries.some((entry) => entry.url === '/echo'),
+                'disableRequestLogging=false 时应保留应用请求体日志'
+            );
+        }
+    );
+});
+
+test('兼容 fastify.disableRequestLogging=true 并禁用 Fastify 请求日志', { concurrency: false }, async () => {
+    await withServer(
+        {
+            fastify: {
+                disableRequestLogging: true,
+            },
+        },
+        async ({ port, logs }) => {
+            clearLogs(logs);
+
+            await requestJson(port, '/echo', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json; charset=utf-8',
+                },
+                body: JSON.stringify({ message: 'logging disabled' }),
+            });
+
+            const logEntries = parseJsonLines(logs);
+            assert.equal(
+                logEntries.some((entry) => entry.req?.url === '/echo'),
+                false,
+                'disableRequestLogging=true 时不应记录 Fastify 请求日志'
+            );
+            assert.ok(
+                logEntries.some((entry) => entry.url === '/echo'),
+                'disableRequestLogging=true 时仍应保留应用请求体日志'
+            );
+        }
+    );
+});
+
 test('关闭开关后，各分支会按预期退化', { concurrency: false }, async () => {
     await withServer(
         {

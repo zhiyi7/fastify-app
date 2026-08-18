@@ -3,7 +3,7 @@
 This is a simple file-based routing fastify 5 application skeleton for JSON API server with some pre-defined features.
 
 Main entry file: `src/index.ts` is the only core file.
-Build with `npm run build`; it uses `tsup` to emit `dist/index.cjs`, `dist/index.mjs`, `dist/index.d.ts`, and `dist/index.d.mts`.
+Build with `npm run build`; it uses `tsdown` to emit `dist/index.cjs`, `dist/index.mjs`, `dist/index.d.cts`, and `dist/index.d.mts`.
 Package consumers and integration tests should prefer importing from the package entry (`fastify-app`) so published behavior stays covered.
 Target: Node.js 22+
 

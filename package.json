@@ -1,6 +1,6 @@
 {
   "name": "fastify-app",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "A simple fastify app template for JSON API server with helpful routes and initial settings.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -39,7 +39,7 @@
   "dependencies": {
     "@fastify/cors": "^11.3.0",
     "fast-glob": "^3.3.3",
-    "fastify": "^5.12.0"
+    "fastify": "^5.12.1"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

@@ -13,7 +13,7 @@ declare module 'fastify' {
     ok(data: unknown, meta?: unknown): FastifyReply;
   }
 }
-interface AppConfig {
+export interface AppConfig {
   disableCors?: boolean;
   corsOptions?: FastifyCorsOptions;
   disableLogRequestBody?: boolean;
@@ -41,19 +41,19 @@ interface AppConfig {
   requestBodyLogLevel?: string;
   requestBodyLogContentTypes?: string[];
 }
-interface FastifyConfig {
+export interface FastifyConfig {
   fastify?: FastifyOptions;
   app?: AppConfig;
   server?: FastifyListenOptions;
 }
-declare class ApiError<Data = Record<string, unknown>> extends Error {
+export declare class ApiError<Data = Record<string, unknown>> extends Error {
   code: string;
   statusCode: number;
   data: Data;
   constructor(message: string, code: string, statusCode?: number, data?: Data);
 }
-declare function init(config?: FastifyConfig): Promise<FastifyAppInstance>;
-declare function start(): Promise<FastifyAppInstance>;
+export declare function init(config?: FastifyConfig): Promise<FastifyAppInstance>;
+export declare function start(): Promise<FastifyAppInstance>;
 declare const instanceProxy: FastifyAppInstance;
 //#endregion
-export { ApiError, AppConfig, FastifyConfig, instanceProxy as default, init, start };
+export { instanceProxy as default };

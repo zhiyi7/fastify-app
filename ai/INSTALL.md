@@ -19,6 +19,8 @@ If any file exists, you just choose a new file name and keep going.
 
 Use the `.mjs` filenames below for a zero-config ESM scaffold. If the target project already standardizes on TypeScript, the same structure can be created as `server.ts`, `config.ts`, and `.ts` route files instead.
 
+Route discovery supports `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, and `.cts` files. TypeScript declaration files (`.d.ts`, `.d.mts`, and `.d.cts`) are ignored.
+
 Do not copy `fastify-app`'s internal `src/index.ts` or `dist/*` files into the target project. Always consume the package entry from `fastify-app`.
 
 ## Project structure to create

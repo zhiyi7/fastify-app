@@ -2,7 +2,7 @@ Object.defineProperties(exports, {
 	__esModule: { value: true },
 	[Symbol.toStringTag]: { value: "Module" }
 });
-//#region \0rolldown/runtime.js
+// \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -23,7 +23,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	value: mod,
 	enumerable: true
 }) : target, mod));
-//#endregion
 let node_path = require("node:path");
 node_path = __toESM(node_path);
 let node_child_process = require("node:child_process");
@@ -35,7 +34,7 @@ let fast_glob = require("fast-glob");
 fast_glob = __toESM(fast_glob);
 let fastify = require("fastify");
 fastify = __toESM(fastify);
-//#region src/index.ts
+// src/index.ts
 const execFileAsync = (0, node_util.promisify)(node_child_process.execFile);
 const defaultRequestBodyLogThreshold = 1e3;
 const defaultRequestBodyLogMaxStringLength = 255;
@@ -142,6 +141,13 @@ function logWithLevel(logger, level, payload) {
 function shouldLogRequestBody(contentType, allowedContentTypes) {
 	return allowedContentTypes.some((allowedType) => contentType.startsWith(allowedType));
 }
+function buildOkPayload(data, meta) {
+	return {
+		status: "ok",
+		data,
+		meta
+	};
+}
 function buildHealthCheckPayload(req, rev, appConfig) {
 	const payload = {
 		ping: "pong",
@@ -170,11 +176,14 @@ function resolveRouteDirectory(basePath, appConfig) {
 	return node_path.default.resolve(basePath, appConfig.routesDirectory ?? "app");
 }
 async function discoverRouteFiles(appDirectory) {
-	return (await (0, fast_glob.default)("**/*.{js,mjs,ts}", {
+	return (await (0, fast_glob.default)("**/*.{js,mjs,cjs,ts,mts,cts}", {
 		cwd: appDirectory,
 		onlyFiles: true,
 		absolute: true
-	})).filter((apiFile) => !node_path.default.basename(apiFile).startsWith("_")).sort((left, right) => left.localeCompare(right));
+	})).filter((apiFile) => {
+		const fileName = node_path.default.basename(apiFile);
+		return !fileName.startsWith("_") && !/\.d\.(?:ts|mts|cts)$/.test(fileName);
+	}).sort((left, right) => left.localeCompare(right));
 }
 function resolveRoutePlugin(importedModule, apiFile) {
 	if (typeof importedModule.default === "function") return importedModule.default();
@@ -197,30 +206,31 @@ async function init(config) {
 	const { logger: rawLoggerConfig, disableRequestLogging, logController: rawLogController, ...restFastifyConfig } = fastifyConfig;
 	const { serializers, ...loggerConfig } = isRecord(rawLoggerConfig) ? rawLoggerConfig : {};
 	const customSerializers = isRecord(serializers) ? serializers : {};
+	const resolvedLoggerConfig = rawLoggerConfig === false ? false : {
+		serializers: {
+			res(reply) {
+				return {
+					statusCode: reply.statusCode,
+					contentLength: typeof reply.getHeader === "function" ? reply.getHeader("content-length") : void 0
+				};
+			},
+			req(req) {
+				return {
+					remoteAddress: req.ip,
+					method: req.method,
+					host: req.hostname,
+					url: req.url,
+					parameters: getLegacyRequestParameters(req),
+					headers: appConfig.disableLogRequestHeaders ? null : req.headers
+				};
+			},
+			...customSerializers
+		},
+		...loggerConfig
+	};
 	const logController = rawLogController ?? new fastify.LogController({ disableRequestLogging });
 	const app = (0, fastify.default)({
-		logger: {
-			serializers: {
-				res(reply) {
-					return {
-						statusCode: reply.statusCode,
-						contentLength: typeof reply.getHeader === "function" ? reply.getHeader("content-length") : void 0
-					};
-				},
-				req(req) {
-					return {
-						remoteAddress: req.ip,
-						method: req.method,
-						host: req.hostname,
-						url: req.url,
-						parameters: getLegacyRequestParameters(req),
-						headers: appConfig.disableLogRequestHeaders ? null : req.headers
-					};
-				},
-				...customSerializers
-			},
-			...loggerConfig
-		},
+		logger: resolvedLoggerConfig,
 		logController,
 		trustProxy: true,
 		bodyLimit: 52428800,
@@ -281,9 +291,8 @@ async function init(config) {
 	if (!appConfig.disableHealthCheckRoutes) {
 		const getGitRevision = createGitRevisionResolver(basePath, appConfig);
 		const healthCheckRoutesPrefix = normalizeRoutePrefix(appConfig.healthCheckRoutesPrefix ?? "");
-		app.all(`${healthCheckRoutesPrefix}/ping`, async function(req, reply) {
-			const rev = await getGitRevision();
-			return reply.ok(buildHealthCheckPayload(req, rev, appConfig));
+		app.all(`${healthCheckRoutesPrefix}/ping`, async function(req) {
+			return buildOkPayload(buildHealthCheckPayload(req, await getGitRevision(), appConfig));
 		});
 		app.all(`${healthCheckRoutesPrefix}/test-api-error`, function(req) {
 			const code = getRequestValue(req, "code");
@@ -302,11 +311,7 @@ async function init(config) {
 		});
 	}
 	if (!appConfig.disableReplyHelperFunctions) app.decorateReply("ok", function(data, meta) {
-		return this.send({
-			status: "ok",
-			data,
-			meta
-		});
+		return this.send(buildOkPayload(data, meta));
 	});
 	const appDirectory = resolveRouteDirectory(basePath, appConfig);
 	const routeEntries = (await discoverRouteFiles(appDirectory)).map((apiFile) => ({
@@ -335,7 +340,6 @@ const instanceProxy = new Proxy({}, { get(_target, prop) {
 	if (!fastifyInstance) return;
 	return fastifyInstance[prop];
 } });
-//#endregion
 exports.ApiError = ApiError;
 exports.default = instanceProxy;
 exports.init = init;

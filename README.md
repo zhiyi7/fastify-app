@@ -38,7 +38,7 @@ If you are working on this repository itself instead of consuming the published 
 
 ## File-based routing
 
-Any `.js`, `.mjs`, or `.ts` file in `app/**` that does not start with underscore (`_`) will be registered as a Fastify plugin. The folder name becomes the route prefix. For example, `app/user/api.js` or `app/user/other-file.mjs` will be available under `http://localhost:port/user/...`.
+Any `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, or `.cts` file in `app/**` that does not start with underscore (`_`) will be registered as a Fastify plugin. TypeScript declaration files (`.d.ts`, `.d.mts`, and `.d.cts`) are ignored. The folder name becomes the route prefix. For example, `app/user/api.js` or `app/user/other-file.mjs` will be available under `http://localhost:port/user/...`.
 
 By default, file names are **not** included in the generated prefix. If you set `app.includeFileNameInRoutePrefix` to `true`, the file name will be appended as another prefix segment, except for `index` files. For example:
 
@@ -304,7 +304,7 @@ export default {
 
 > CommonJS, ES module, and TypeScript are all supported.
 
-Create an `app` folder in your project root, and create a JS file in it, `api.js` for example (or `.mjs` or `.ts`), with the following content:
+Create an `app` folder in your project root, and create a route file in it, `api.js` for example. Route discovery supports `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, and `.cts`; TypeScript declaration files are ignored. The following example uses CommonJS:
 
 ```javascript
 'use strict';

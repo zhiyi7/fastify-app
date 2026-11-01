@@ -151,6 +151,30 @@ test('默认脚手架功能和路由都能工作', { concurrency: false }, async
                 ok: true,
             });
 
+            const cjsRoute = await requestJson(port, '/cjs-route');
+            assert.deepEqual(cjsRoute.body, {
+                extension: 'cjs',
+                ok: true,
+            });
+
+            const tsRoute = await requestJson(port, '/ts-route');
+            assert.deepEqual(tsRoute.body, {
+                extension: 'ts',
+                ok: true,
+            });
+
+            const mtsRoute = await requestJson(port, '/mts-route');
+            assert.deepEqual(mtsRoute.body, {
+                extension: 'mts',
+                ok: true,
+            });
+
+            const ctsRoute = await requestJson(port, '/cts-route');
+            assert.deepEqual(ctsRoute.body, {
+                extension: 'cts',
+                ok: true,
+            });
+
             const nestedRoute = await requestJson(port, '/nested/route');
             assert.deepEqual(nestedRoute.body, {
                 nested: true,
@@ -282,6 +306,70 @@ test('兼容 fastify.disableRequestLogging=true 并禁用 Fastify 请求日志',
                 logEntries.some((entry) => entry.url === '/echo'),
                 'disableRequestLogging=true 时仍应保留应用请求体日志'
             );
+        }
+    );
+});
+
+test('fastify.logger=false 会真正关闭日志', { concurrency: false }, async () => {
+    const previousCwd = process.cwd();
+
+    process.chdir(fixtureRoot);
+
+    try {
+        const instance = await init({
+            fastify: {
+                logger: false,
+            },
+            app: {
+                disableHealthCheckRoutes: true,
+            },
+        });
+
+        try {
+            assert.equal(instance.log.level, undefined);
+
+            const response = await instance.inject({
+                method: 'POST',
+                url: '/echo',
+                headers: {
+                    'content-type': 'application/json',
+                },
+                payload: {
+                    message: 'logging disabled',
+                },
+            });
+
+            assert.equal(response.statusCode, 200);
+        } finally {
+            await instance.close();
+        }
+    } finally {
+        process.chdir(previousCwd);
+    }
+});
+
+test('健康检查不依赖可选的 reply.ok helper', { concurrency: false }, async () => {
+    await withServer(
+        {
+            app: {
+                disableReplyHelperFunctions: true,
+                healthCheckRoutesPrefix: '/health-check',
+                healthCheckExposeTimezone: false,
+                healthCheckExposeRandom: false,
+            },
+        },
+        async ({ port }) => {
+            const healthCheck = await requestJson(port, '/health-check/ping?echo=helper-disabled');
+
+            assert.equal(healthCheck.response.status, 200);
+            assert.deepEqual(healthCheck.body, {
+                status: 'ok',
+                data: {
+                    ping: 'pong',
+                    echo: 'helper-disabled',
+                    rev: 'unknown',
+                },
+            });
         }
     );
 });

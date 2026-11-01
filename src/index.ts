@@ -264,6 +264,14 @@ function shouldLogRequestBody(contentType: string, allowedContentTypes: string[]
     return allowedContentTypes.some((allowedType) => contentType.startsWith(allowedType));
 }
 
+function buildOkPayload(data: unknown, meta?: unknown) {
+    return {
+        status: 'ok' as const,
+        data,
+        meta,
+    };
+}
+
 function buildHealthCheckPayload(req: FastifyRequest, rev: string, appConfig: AppConfig) {
     const payload: {
         ping: 'pong';
@@ -317,14 +325,18 @@ function resolveRouteDirectory(basePath: string, appConfig: AppConfig): string {
 }
 
 async function discoverRouteFiles(appDirectory: string): Promise<string[]> {
-    const apiFiles = await fastGlob('**/*.{js,mjs,ts}', {
+    const apiFiles = await fastGlob('**/*.{js,mjs,cjs,ts,mts,cts}', {
         cwd: appDirectory,
         onlyFiles: true,
         absolute: true,
     });
 
     return apiFiles
-        .filter((apiFile) => !path.basename(apiFile).startsWith('_'))
+        .filter((apiFile) => {
+            const fileName = path.basename(apiFile);
+
+            return !fileName.startsWith('_') && !/\.d\.(?:ts|mts|cts)$/.test(fileName);
+        })
         .sort((left, right) => left.localeCompare(right));
 }
 
@@ -363,10 +375,9 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
     const normalizedLoggerConfig = isRecord(rawLoggerConfig) ? rawLoggerConfig : {};
     const { serializers, ...loggerConfig } = normalizedLoggerConfig;
     const customSerializers = isRecord(serializers) ? serializers : {};
-    const logController = rawLogController ?? new LogController({ disableRequestLogging });
-
-    const app = fastify({
-        logger: {
+    const resolvedLoggerConfig: FastifyServerOptions['logger'] = rawLoggerConfig === false
+        ? false
+        : {
             serializers: {
                 res(reply) {
                     return {
@@ -389,7 +400,11 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
                 ...customSerializers,
             },
             ...loggerConfig,
-        },
+        };
+    const logController = rawLogController ?? new LogController({ disableRequestLogging });
+
+    const app = fastify({
+        logger: resolvedLoggerConfig,
         logController,
         trustProxy: true,
         bodyLimit: 52428800,
@@ -493,10 +508,10 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
         const getGitRevision = createGitRevisionResolver(basePath, appConfig);
         const healthCheckRoutesPrefix = normalizeRoutePrefix(appConfig.healthCheckRoutesPrefix ?? '');
 
-        app.all(`${healthCheckRoutesPrefix}/ping`, async function (req, reply) {
+        app.all(`${healthCheckRoutesPrefix}/ping`, async function (req) {
             const rev = await getGitRevision();
 
-            return reply.ok(buildHealthCheckPayload(req, rev, appConfig));
+            return buildOkPayload(buildHealthCheckPayload(req, rev, appConfig));
         });
 
         app.all(`${healthCheckRoutesPrefix}/test-api-error`, function (req) {
@@ -528,11 +543,7 @@ export async function init(config?: FastifyConfig): Promise<FastifyAppInstance> 
 
     if (!appConfig.disableReplyHelperFunctions) {
         app.decorateReply('ok', function (this: FastifyReply, data: unknown, meta?: unknown) {
-            return this.send({
-                status: 'ok',
-                data,
-                meta,
-            });
+            return this.send(buildOkPayload(data, meta));
         });
     }
 

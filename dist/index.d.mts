@@ -1,6 +1,5 @@
 import { FastifyCorsOptions } from "@fastify/cors";
 import { FastifyInstance, FastifyListenOptions, FastifyServerOptions } from "fastify";
-//#region src/index.d.ts
 type RoutePrefixCase = 'preserve' | 'kebab-case';
 type RequestState = Record<string, unknown>;
 type FastifyAppInstance = FastifyInstance;
@@ -55,5 +54,4 @@ export declare class ApiError<Data = Record<string, unknown>> extends Error {
 export declare function init(config?: FastifyConfig): Promise<FastifyAppInstance>;
 export declare function start(): Promise<FastifyAppInstance>;
 declare const instanceProxy: FastifyAppInstance;
-//#endregion
 export { instanceProxy as default };
